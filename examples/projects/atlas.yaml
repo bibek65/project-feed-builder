@@ -1,0 +1,8 @@
+name: Atlas Service Toolkit
+slug: atlas-service-toolkit
+summary: Small tools for making service ownership and operational checks easier to share.
+repository: https://github.com/saurabbhattarai-lf/service-watch
+topics:
+  - TypeScript
+  - Operations
+  - CLI

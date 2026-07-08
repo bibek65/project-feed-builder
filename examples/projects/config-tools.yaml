@@ -1,0 +1,8 @@
+name: Configuration Tooling
+slug: configuration-tooling
+summary: Utilities that make layered configuration safer to review before it reaches CI.
+repository: https://github.com/saurabbhattarai-lf/yaml-merge-check
+topics:
+  - YAML
+  - CI
+  - Developer tools
