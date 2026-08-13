@@ -6,13 +6,16 @@ import { pathToFileURL } from "node:url";
 const bundleRoot = path.resolve(process.argv[2] ?? "preview-bundle");
 const manifest = JSON.parse(await readFile(path.join(bundleRoot, "manifest.json"), "utf8"));
 if (manifest.version !== 1) throw new Error("unsupported preview manifest version");
-if (!manifest.renderer.startsWith("renderers/") || manifest.renderer.includes("..")) throw new Error("invalid renderer path");
-if (!manifest.output.startsWith("generated/") || manifest.output.includes("..")) throw new Error("invalid output path");
 
-const rendererPath = path.resolve(bundleRoot, manifest.renderer);
-if (!rendererPath.startsWith(path.join(bundleRoot, "renderers") + path.sep)) throw new Error("renderer escaped bundle");
-const outputPath = path.resolve(bundleRoot, manifest.output);
-if (!outputPath.startsWith(path.join(bundleRoot, "generated") + path.sep)) throw new Error("output escaped bundle");
+function resolveBundlePath(relativePath, directory, label) {
+  if (!relativePath.startsWith(`${directory}/`) || relativePath.includes("..")) throw new Error(`invalid ${label} path`);
+  const resolved = path.resolve(bundleRoot, relativePath);
+  if (!resolved.startsWith(path.join(bundleRoot, directory) + path.sep)) throw new Error(`${label} escaped bundle`);
+  return resolved;
+}
+
+const rendererPath = resolveBundlePath(manifest.renderer, "renderers", "renderer");
+const outputPath = resolveBundlePath(manifest.output, "generated", "output");
 
 const projects = JSON.parse(await readFile(outputPath, "utf8"));
 const renderer = await import(pathToFileURL(rendererPath).href);
