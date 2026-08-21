@@ -40,3 +40,4 @@ jobs:
           name: preview-bundle
           path: preview-bundle
           if-no-files-found: error
+          retention-days: 5
