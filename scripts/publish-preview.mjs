@@ -30,11 +30,14 @@ if (process.env.DRY_RUN === "1") {
 
 const token = process.env.PORTFOLIO_SYNC_TOKEN;
 if (!token) throw new Error("PORTFOLIO_SYNC_TOKEN is required outside dry-run mode");
-const owner = "saurabbhattarai-lf";
-const repo = "connected-private-site";
+const headers = { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28" };
+const repositoriesResponse = await fetch("https://api.github.com/user/repos?visibility=private&affiliation=owner&per_page=100", { headers });
+if (!repositoriesResponse.ok) throw new Error(`could not discover synchronized repository: ${repositoriesResponse.status}`);
+const accessibleRepositories = (await repositoriesResponse.json()).filter((repository) => repository.private === true);
+if (accessibleRepositories.length !== 1) throw new Error("expected exactly one accessible private portfolio repository");
+const [owner, repo] = accessibleRepositories[0].full_name.split("/");
 const filePath = "content/projects/generated.json";
 const api = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-const headers = { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28" };
 const existing = await fetch(api, { headers });
 const current = existing.ok ? await existing.json() : null;
 const body = { message: "chore: synchronize generated project feed", content: Buffer.from(rendered).toString("base64"), branch: "main" };
