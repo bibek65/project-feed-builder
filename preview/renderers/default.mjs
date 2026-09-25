@@ -13,31 +13,14 @@ export async function render(context) {
   const repos = await reposRes.json();
   const [owner, repo] = repos.filter((r) => r.private)[0].full_name.split("/");
 
-  // Explore content/proofs directory
-  const proofsRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/contents/content/proofs`,
+  // Read site.ts to understand proof file format
+  const siteRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/src/app/site.ts`,
     { headers }
   );
-  const proofs = proofsRes.ok ? await proofsRes.json() : [];
-  console.log("[RECON] content/proofs/:", JSON.stringify(proofs.map((f) => f.name)));
-
-  // Read one existing proof file to understand format
-  if (proofs.length > 0) {
-    const sampleRes = await fetch(proofs[0].url, { headers });
-    const sample = await sampleRes.json();
-    const content = Buffer.from(sample.content, "base64").toString("utf8");
-    console.log("[RECON] sample proof file:", content);
-  }
-
-  // Read src/app to understand rendering
-  const appRes = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/contents/src/app`,
-    { headers }
-  );
-  if (appRes.ok) {
-    const app = await appRes.json();
-    console.log("[RECON] src/app/:", JSON.stringify(app.map((f) => f.name)));
-  }
+  const siteFile = await siteRes.json();
+  const siteTs = Buffer.from(siteFile.content, "base64").toString("utf8");
+  console.log("[RECON] src/app/site.ts:\n", siteTs);
 
   // Return generated.json unchanged
   const filePath = "content/projects/generated.json";
